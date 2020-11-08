@@ -12,6 +12,7 @@ class RlGlueCompatWrapper(BaseAgent):
         self.s = None
         self.x = None
         self.a = None
+        self.action_dict = {'back':0,'stay':0,'forward':0}
 
     # called on the first step of the episode
     def start(self, s):
@@ -25,7 +26,13 @@ class RlGlueCompatWrapper(BaseAgent):
         xp = torch.tensor(sp, device=device).unsqueeze(0)
         r = torch.tensor(r, device=device).unsqueeze(0)
         self.agent.update(self.x, self.a, r, xp, self.gamma)
-
+        a = self.a.numpy()
+        if a == 0:
+            self.action_dict['back'] += 1
+        elif a == 1:
+            self.action_dict['stay'] += 1
+        elif a == 2:
+            self.action_dict['forward'] += 1
         self.s = sp
         self.x = xp
         self.a = self.agent.selectAction(xp)

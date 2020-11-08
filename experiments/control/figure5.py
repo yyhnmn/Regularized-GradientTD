@@ -64,7 +64,7 @@ for run in range(RUNS):
 
             collector.collect(Learner.__name__, glue.total_reward)
         print(agent.agent.target_net.fc_out.weight)
-        print(glue.action_dict)
+        print(agent.action_dict)
 
         collector.reset()
 
