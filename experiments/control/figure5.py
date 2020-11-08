@@ -12,7 +12,7 @@ from utils.Collector import Collector
 from utils.rl_glue import RlGlueCompatWrapper
 
 
-RUNS = 5
+RUNS = 1
 EPISODES = 100
 LEARNERS = [DQN,]
 
