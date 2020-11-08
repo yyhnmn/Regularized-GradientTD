@@ -5,26 +5,30 @@ from RlGlue import RlGlue
 from agents.QLearning import QLearning
 from agents.QRC import QRC
 from agents.QC import QC
+from agents.DQNAgent import DQN
 from environments.MountainCar import MountainCar
 
 from utils.Collector import Collector
 from utils.rl_glue import RlGlueCompatWrapper
 
-RUNS = 10
+
+RUNS = 5
 EPISODES = 100
-LEARNERS = [QRC, QC, QLearning]
+LEARNERS = [DQN,]
 
 COLORS = {
     'QLearning': 'blue',
     'QRC': 'purple',
-    'QC': 'green',
+    # 'QC': 'green',
+    'DQN': 'red',
 }
 
 # use stepsizes found in parameter study
 STEPSIZES = {
     'QLearning': 0.003906,
     'QRC': 0.0009765,
-    'QC': 0.0009765,
+    # 'QC': 0.0009765,
+    'DQN': 0.0009765,
 }
 
 collector = Collector()
@@ -47,9 +51,9 @@ for run in range(RUNS):
         })
 
         agent = RlGlueCompatWrapper(learner, gamma=0.99)
-
+        print(agent.agent.target_net.fc_out.weight)
         glue = RlGlue(agent, env)
-
+        
         glue.start()
         for episode in range(EPISODES):
             glue.num_steps = 0
@@ -59,6 +63,8 @@ for run in range(RUNS):
             print(Learner.__name__, run, episode, glue.num_steps)
 
             collector.collect(Learner.__name__, glue.total_reward)
+        print(agent.agent.target_net.fc_out.weight)
+        print(glue.action_dict)
 
         collector.reset()
 
@@ -72,6 +78,7 @@ for Learner in LEARNERS:
     name = Learner.__name__
     data = collector.getStats(name)
     plot(ax, data, label=name, color=COLORS[name])
+
 
 plt.legend()
 plt.show()
