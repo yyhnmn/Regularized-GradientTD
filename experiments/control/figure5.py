@@ -10,11 +10,13 @@ from environments.MountainCar import MountainCar
 
 from utils.Collector import Collector
 from utils.rl_glue import RlGlueCompatWrapper
+import pandas
 
 
-RUNS = 1
-EPISODES = 100
+RUNS = 5
+EPISODES = 1000
 LEARNERS = [DQN,]
+action_dict = []
 
 COLORS = {
     'QLearning': 'blue',
@@ -64,10 +66,13 @@ for run in range(RUNS):
 
             collector.collect(Learner.__name__, glue.total_reward)
         print(agent.agent.target_net.fc_out.weight)
-        print(agent.action_dict)
+
+        action_dict.append(agent.action_dict)
 
         collector.reset()
-
+df = pandas.DataFrame(action_dict)
+print(action_dict)
+print(df.mean())
 
 import matplotlib.pyplot as plt
 from utils.plotting import plot
