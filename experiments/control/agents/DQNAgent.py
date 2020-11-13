@@ -40,6 +40,12 @@ class DQN(BaseAgent):
             Qspap[batch.nterm] = Qsp.max(1).values
             
 
+
+        # # bootstrapping term is the max Q value for the next-state
+        # # only assign to indices where the next state is non-terminal
+        # Qsp, x = self.target_net(batch.states)
+        # Qspap=Qsp.gather(1, batch.actions).squeeze()
+
         # compute the empirical MSBE for this mini-batch and let torch auto-diff to optimize
         # don't worry about detaching the bootstrapping term for semi-gradient Q-learning
         # the target network handles that
