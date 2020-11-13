@@ -15,6 +15,9 @@ class DQN(BaseAgent):
         self.buffer_BACK = ReplayBuffer(1000)
         self.buffer_STAY = ReplayBuffer(1000)
         self.buffer_FORWARD = ReplayBuffer(1000)
+        self.policy_net.load_state_dict(torch.load("net_params.pt"))
+        self.target_net.load_state_dict(torch.load("net_params.pt"))
+
 
     def updateNetwork(self, samples):
         # organize the mini-batch so that we can request "columns" from the data
@@ -35,7 +38,7 @@ class DQN(BaseAgent):
             # bootstrapping term is the max Q value for the next-state
             # only assign to indices where the next state is non-terminal
             Qspap[batch.nterm] = Qsp.max(1).values
-
+            
 
         # compute the empirical MSBE for this mini-batch and let torch auto-diff to optimize
         # don't worry about detaching the bootstrapping term for semi-gradient Q-learning

@@ -13,8 +13,8 @@ from utils.rl_glue import RlGlueCompatWrapper
 import pandas
 
 
-RUNS = 5
-EPISODES = 1000
+RUNS = 1
+EPISODES = 100
 LEARNERS = [DQN,]
 action_dict = []
 
@@ -71,6 +71,8 @@ for run in range(RUNS):
         action_dict.append(agent.action_dict)
 
         collector.reset()
+
+
 df = pandas.DataFrame(action_dict)
 print(action_dict)
 print(df.mean())
