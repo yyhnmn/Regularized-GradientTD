@@ -53,7 +53,7 @@ for run in range(RUNS):
         })
 
         agent = RlGlueCompatWrapper(learner, gamma=0.99)
-        print(agent.agent.target_net.fc_out.weight)
+        # print(agent.agent.target_net.fc_out.weight)
         glue = RlGlue(agent, env)
         
         glue.start()
@@ -65,7 +65,8 @@ for run in range(RUNS):
             print(Learner.__name__, run, episode, glue.num_steps)
 
             collector.collect(Learner.__name__, glue.total_reward)
-        print(agent.agent.target_net.fc_out.weight)
+
+        # print(agent.agent.target_net.fc_out.weight)
 
         action_dict.append(agent.action_dict)
 

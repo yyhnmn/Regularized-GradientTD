@@ -3,9 +3,18 @@ import numpy as np
 import torch.nn.functional as f
 from agents.BaseAgent import BaseAgent
 from utils.torch import device, getBatchColumns
+from utils.ReplayBuffer import ReplayBuffer
+
+def choice(arr, size=1):
+    idxs = np.random.permutation(len(arr))
+    return [arr[i] for i in idxs[:size]]
 
 class DQN(BaseAgent):
-    
+    def __init__(self, features, actions, params):
+        super(DQN,self).__init__(features,actions,params)
+        self.buffer_BACK = ReplayBuffer(1000)
+        self.buffer_STAY = ReplayBuffer(1000)
+        self.buffer_FORWARD = ReplayBuffer(1000)
 
     def updateNetwork(self, samples):
         # organize the mini-batch so that we can request "columns" from the data
@@ -45,4 +54,30 @@ class DQN(BaseAgent):
         # update the *policy network* using the combined gradients
         self.optimizer.step()
 
-        
+
+
+    def update(self, s, a, sp, r, gamma):
+        if a.numpy() == 0:
+            self.buffer_BACK.add((s,a,sp,r,gamma))
+        elif a.numpy() == 1:
+            self.buffer_STAY.add((s,a,sp,r,gamma))
+        elif a.numpy() == 2:
+            self.buffer_FORWARD.add((s,a,sp,r,gamma))
+
+        wholebuffer = self.buffer_BACK.buffer+self.buffer_STAY.buffer+self.buffer_FORWARD.buffer
+
+
+        # the "online" sample gets tossed into the replay buffer
+        self.buffer.add((s, a, sp, r, gamma))
+        self.steps += 1
+
+        # if it is time to set the target net <- policy network
+        # do that before the learning step
+        if self.steps % self.target_refresh == 0:
+            self.policy_net.cloneWeightsTo(self.target_net)
+
+        # as long as we have enough samples in the buffer to do one mini-batch update
+        # go ahead and randomly sample a mini-batch and do a single update
+        if len(wholebuffer) > 32:
+            samples = choice(wholebuffer, 32)
+            self.updateNetwork(samples)
