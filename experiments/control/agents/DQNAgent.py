@@ -4,6 +4,9 @@ import torch.nn.functional as f
 from agents.BaseAgent import BaseAgent
 from utils.torch import device, getBatchColumns
 from utils.ReplayBuffer import ReplayBuffer
+from agents.Network import Network
+from utils.torch import device
+
 
 def choice(arr, size=1):
     idxs = np.random.permutation(len(arr))
@@ -15,8 +18,8 @@ class DQN(BaseAgent):
         self.buffer_BACK = ReplayBuffer(1000)
         self.buffer_STAY = ReplayBuffer(1000)
         self.buffer_FORWARD = ReplayBuffer(1000)
-        self.policy_net.load_state_dict(torch.load("net_params.pt"))
-        self.target_net.load_state_dict(torch.load("net_params.pt"))
+        self.det_net.load_state_dict(torch.load("net_params.pt"))
+
 
 
     def updateNetwork(self, samples):
@@ -40,12 +43,6 @@ class DQN(BaseAgent):
             Qspap[batch.nterm] = Qsp.max(1).values
             
 
-
-        # # bootstrapping term is the max Q value for the next-state
-        # # only assign to indices where the next state is non-terminal
-        # Qsp, x = self.target_net(batch.states)
-        # Qspap=Qsp.gather(1, batch.actions).squeeze()
-
         # compute the empirical MSBE for this mini-batch and let torch auto-diff to optimize
         # don't worry about detaching the bootstrapping term for semi-gradient Q-learning
         # the target network handles that
@@ -64,6 +61,16 @@ class DQN(BaseAgent):
         self.optimizer.step()
 
 
+    def selectAction(self, x):
+        # take a random action about epsilon percent of the time
+        if np.random.rand() < self.epsilon:
+            a = np.random.randint(self.actions)
+            return torch.tensor(a, device=device)
+
+        # otherwise take a greedy action
+        q_s, _ = self.det_net(x)
+        # print(q_s)
+        return q_s.argmax().detach()
 
     def update(self, s, a, sp, r, gamma):
         if a.numpy() == 0:
