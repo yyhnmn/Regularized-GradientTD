@@ -14,7 +14,7 @@ import pandas
 
 
 RUNS = 1
-EPISODES = 100
+EPISODES = 1000
 LEARNERS = [DQN,]
 action_dict = []
 
@@ -87,6 +87,7 @@ for Learner in LEARNERS:
     data = collector.getStats(name)
     plot(ax, data, label=name, color=COLORS[name])
 
-
+plt.xlabel("episode")
+plt.ylabel("reward")
 plt.legend()
 plt.show()

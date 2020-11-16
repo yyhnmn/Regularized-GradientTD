@@ -61,16 +61,16 @@ class DQN(BaseAgent):
         self.optimizer.step()
 
 
-    def selectAction(self, x):
-        # take a random action about epsilon percent of the time
-        if np.random.rand() < self.epsilon:
-            a = np.random.randint(self.actions)
-            return torch.tensor(a, device=device)
+    # def selectAction(self, x):
+    #     # take a random action about epsilon percent of the time
+    #     if np.random.rand() < self.epsilon:
+    #         a = np.random.randint(self.actions)
+    #         return torch.tensor(a, device=device)
 
-        # otherwise take a greedy action
-        q_s, _ = self.det_net(x)
-        # print(q_s)
-        return q_s.argmax().detach()
+    #     # otherwise take a greedy action
+    #     q_s, _ = self.det_net(x)
+    #     # print(q_s)
+    #     return q_s.argmax().detach()
 
     def update(self, s, a, sp, r, gamma):
         if a.numpy() == 0:
