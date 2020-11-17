@@ -14,7 +14,7 @@ import pandas
 
 
 RUNS = 1
-EPISODES = 1000
+EPISODES = 100
 LEARNERS = [DQN,]
 action_dict = []
 
