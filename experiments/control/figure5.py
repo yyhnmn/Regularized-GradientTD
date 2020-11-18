@@ -14,9 +14,8 @@ from utils.Collector import Collector
 from utils.rl_glue import RlGlueCompatWrapper
 import pandas
 
-
-RUNS = 2
-EPISODES = 3
+RUNS = 20
+EPISODES = 1000
 LEARNERS = [DQN, ]
 action_dict = []
 
