@@ -89,10 +89,9 @@ for run in range(RUNS):
         agent.resetDict()
 
 
-# df = pandas.DataFrame(action_dict)
-# print(action_dict)
-# print(df.mean())
-
+df = pandas.DataFrame(action_dict)
+print(action_dict)
+print(df.mean())
 
 
 plt.figure()

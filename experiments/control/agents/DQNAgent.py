@@ -12,15 +12,14 @@ def choice(arr, size=1):
     idxs = np.random.permutation(len(arr))
     return [arr[i] for i in idxs[:size]]
 
+
 class DQN(BaseAgent):
     def __init__(self, features, actions, params):
-        super(DQN,self).__init__(features,actions,params)
+        super(DQN, self).__init__(features, actions, params)
         self.buffer_BACK = ReplayBuffer(1000)
         self.buffer_STAY = ReplayBuffer(1000)
         self.buffer_FORWARD = ReplayBuffer(1000)
         self.det_net.load_state_dict(torch.load("net_params.pt"))
-
-
 
     def updateNetwork(self, samples):
         # organize the mini-batch so that we can request "columns" from the data
@@ -41,14 +40,12 @@ class DQN(BaseAgent):
             # bootstrapping term is the max Q value for the next-state
             # only assign to indices where the next state is non-terminal
             Qspap[batch.nterm] = Qsp.max(1).values
-            
 
         # compute the empirical MSBE for this mini-batch and let torch auto-diff to optimize
         # don't worry about detaching the bootstrapping term for semi-gradient Q-learning
         # the target network handles that
         target = batch.rewards + batch.gamma * Qspap.detach()
         td_loss = 0.5 * f.mse_loss(target, Qsa)
-
 
         # make sure we have no gradients left over from previous update
         self.optimizer.zero_grad()
@@ -59,7 +56,6 @@ class DQN(BaseAgent):
 
         # update the *policy network* using the combined gradients
         self.optimizer.step()
-
 
     # def selectAction(self, x):
     #     # take a random action about epsilon percent of the time
@@ -74,14 +70,14 @@ class DQN(BaseAgent):
 
     def update(self, s, a, sp, r, gamma):
         if a.numpy() == 0:
-            self.buffer_BACK.add((s,a,sp,r,gamma))
+            self.buffer_BACK.add((s, a, sp, r, gamma))
         elif a.numpy() == 1:
-            self.buffer_STAY.add((s,a,sp,r,gamma))
+            self.buffer_STAY.add((s, a, sp, r, gamma))
         elif a.numpy() == 2:
-            self.buffer_FORWARD.add((s,a,sp,r,gamma))
+            self.buffer_FORWARD.add((s, a, sp, r, gamma))
 
-        wholebuffer = self.buffer_BACK.buffer+self.buffer_STAY.buffer+self.buffer_FORWARD.buffer
-
+        wholebuffer = self.buffer_BACK.buffer + \
+            self.buffer_STAY.buffer+self.buffer_FORWARD.buffer
 
         # the "online" sample gets tossed into the replay buffer
         self.buffer.add((s, a, sp, r, gamma))

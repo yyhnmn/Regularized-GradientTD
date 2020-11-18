@@ -13,12 +13,13 @@ class RlGlueCompatWrapper(BaseAgent):
         self.s = None
         self.x = None
         self.a = None
-        self.action_dict = {'back':0,'stay':0,'forward':0}
-        self.action_dict_proportion = {'back':0,'stay':0,'forward':0}
+        self.action_dict = {'back': 0, 'stay': 0, 'forward': 0}
+        self.action_dict_proportion = {'back': 0, 'stay': 0, 'forward': 0}
 
     def resetDict(self):
-        self.action_dict=self.action_dict.fromkeys(self.action_dict,0)
-        self.action_dict_proportion=self.action_dict_proportion.fromkeys(self.action_dict_proportion,0)
+        self.action_dict = self.action_dict.fromkeys(self.action_dict, 0)
+        self.action_dict_proportion = self.action_dict_proportion.fromkeys(
+            self.action_dict_proportion, 0)
 
     # called on the first step of the episode
     def start(self, s):
@@ -42,12 +43,15 @@ class RlGlueCompatWrapper(BaseAgent):
             self.action_dict['forward'] += 1
 
         sum_action = 0
-        for (key, value) in self.action_dict.items(): 
+        for (key, value) in self.action_dict.items():
             sum_action += value
-        self.action_dict_proportion['back'] = (self.action_dict['back'] / (sum_action + 0.0))*100
-        self.action_dict_proportion['stay'] = (self.action_dict['stay'] / (sum_action + 0.0))*100
-        self.action_dict_proportion['forward'] = (self.action_dict['forward'] / (sum_action + 0.0))*100
-        
+        self.action_dict_proportion['back'] = (
+            self.action_dict['back'] / (sum_action + 0.0))*100
+        self.action_dict_proportion['stay'] = (
+            self.action_dict['stay'] / (sum_action + 0.0))*100
+        self.action_dict_proportion['forward'] = (
+            self.action_dict['forward'] / (sum_action + 0.0))*100
+
         self.s = sp
         self.x = xp
         self.a = self.agent.selectAction(xp)
