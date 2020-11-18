@@ -1,3 +1,5 @@
+from utils.plotting import plot
+import matplotlib.pyplot as plt
 import numpy as np
 import torch
 
@@ -13,9 +15,9 @@ from utils.rl_glue import RlGlueCompatWrapper
 import pandas
 
 
-RUNS = 1
-EPISODES = 100
-LEARNERS = [DQN,]
+RUNS = 2
+EPISODES = 3
+LEARNERS = [DQN, ]
 action_dict = []
 
 COLORS = {
@@ -33,7 +35,10 @@ STEPSIZES = {
     'DQN': 0.0009765,
 }
 
-collector = Collector()
+collectorb = Collector()
+collectors = Collector()
+collectorf = Collector()
+collectorreward = Collector()
 
 for run in range(RUNS):
     for Learner in LEARNERS:
@@ -53,9 +58,10 @@ for run in range(RUNS):
         })
 
         agent = RlGlueCompatWrapper(learner, gamma=0.99)
+
         # print(agent.agent.target_net.fc_out.weight)
         glue = RlGlue(agent, env)
-        
+
         glue.start()
         for episode in range(EPISODES):
             glue.num_steps = 0
@@ -64,27 +70,53 @@ for run in range(RUNS):
 
             print(Learner.__name__, run, episode, glue.num_steps)
 
-            collector.collect(Learner.__name__, glue.total_reward)
+            collectorb.collect(
+                Learner.__name__, agent.action_dict['back']/100)
+            collectors.collect(
+                Learner.__name__, agent.action_dict['stay']/100)
+            collectorf.collect(
+                Learner.__name__, agent.action_dict['forward']/100)
+            collectorreward.collect(
+                Learner.__name__, glue.total_reward)
 
         # print(agent.agent.target_net.fc_out.weight)
 
         action_dict.append(agent.action_dict)
 
-        collector.reset()
+        collectorb.reset()
+        collectors.reset()
+        collectorf.reset()
+        collectorreward.reset()
+        agent.resetDict()
 
 
-df = pandas.DataFrame(action_dict)
-print(action_dict)
-print(df.mean())
+# df = pandas.DataFrame(action_dict)
+# print(action_dict)
+# print(df.mean())
 
-import matplotlib.pyplot as plt
-from utils.plotting import plot
 
+
+plt.figure()
 ax = plt.gca()
-
 for Learner in LEARNERS:
     name = Learner.__name__
-    data = collector.getStats(name)
+    datab = collectorb.getStats(name)
+    plot(ax, datab, label="back", color="red")
+
+    datas = collectors.getStats(name)
+    plot(ax, datas, label="do nothing", color='blue')
+
+    dataf = collectorf.getStats(name)
+    plot(ax, dataf, label="forward", color='green')
+plt.xlabel("episode")
+plt.legend()
+plt.show()
+
+plt.figure()
+ax = plt.gca()
+for Learner in LEARNERS:
+    name = Learner.__name__
+    data = collectorreward.getStats(name)
     plot(ax, data, label=name, color=COLORS[name])
 
 plt.xlabel("episode")
