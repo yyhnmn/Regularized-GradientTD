@@ -34,7 +34,7 @@ class RlGlueCompatWrapper(BaseAgent):
         xp = torch.tensor(sp, device=device).unsqueeze(0)
         r = torch.tensor(r, device=device).unsqueeze(0)
         self.agent.update(self.x, self.a, r, xp, self.gamma)
-        a = self.a.numpy()
+        a = self.a.cpu().numpy()
         if a == 0:
             self.action_dict['back'] += 1
         elif a == 1:

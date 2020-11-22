@@ -19,7 +19,9 @@ class DQN(BaseAgent):
         self.buffer_BACK = ReplayBuffer(1000)
         self.buffer_STAY = ReplayBuffer(1000)
         self.buffer_FORWARD = ReplayBuffer(1000)
-        self.det_net.load_state_dict(torch.load("net_params.pt"))
+        self.back_values = []
+        self.stay_values = []
+        self.forward_values = []
 
     def updateNetwork(self, samples):
         # organize the mini-batch so that we can request "columns" from the data
@@ -31,7 +33,16 @@ class DQN(BaseAgent):
         Qsa = Qs.gather(1, batch.actions).squeeze()
 
         # by default Q(s', a') = 0 unless the next states are non-terminal
+
         Qspap = torch.zeros(batch.size, device=device)
+        for i in range(32):
+            if batch.actions.numpy()[i][0] == 0:
+                self.back_values.append(Qsa.detach().numpy()[i])
+            elif batch.actions.numpy()[i][0] == 1:
+                self.stay_values.append(Qsa.detach().numpy()[i])
+            elif batch.actions.numpy()[i][0] == 2:
+                self.forward_values.append(Qsa.detach().numpy()[i])
+
 
         # if we don't have any non-terminal next states, then no need to bootstrap
         if batch.nterm_sp.shape[0] > 0:
@@ -57,23 +68,14 @@ class DQN(BaseAgent):
         # update the *policy network* using the combined gradients
         self.optimizer.step()
 
-    # def selectAction(self, x):
-    #     # take a random action about epsilon percent of the time
-    #     if np.random.rand() < self.epsilon:
-    #         a = np.random.randint(self.actions)
-    #         return torch.tensor(a, device=device)
 
-    #     # otherwise take a greedy action
-    #     q_s, _ = self.det_net(x)
-    #     # print(q_s)
-    #     return q_s.argmax().detach()
 
     def update(self, s, a, sp, r, gamma):
-        if a.numpy() == 0:
+        if a.cpu().numpy() == 0:
             self.buffer_BACK.add((s, a, sp, r, gamma))
-        elif a.numpy() == 1:
+        elif a.cpu().numpy() == 1:
             self.buffer_STAY.add((s, a, sp, r, gamma))
-        elif a.numpy() == 2:
+        elif a.cpu().numpy() == 2:
             self.buffer_FORWARD.add((s, a, sp, r, gamma))
 
         wholebuffer = self.buffer_BACK.buffer + \
