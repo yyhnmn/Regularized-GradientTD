@@ -155,7 +155,7 @@ for Learner in LEARNERS:
 
     dataf = collectorfq.getStats(name)
     plot(ax, dataf, label="forward", color='green')
-plt.xlabel("step")
-plt.ylabel("forward Q-values")
+plt.xlabel("epoch")
+plt.ylabel("Q-values")
 plt.legend()
 plt.show()

@@ -93,6 +93,6 @@ class DQN(BaseAgent):
         # as long as we have enough samples in the buffer to do one mini-batch update
         # go ahead and randomly sample a mini-batch and do a single update
         if len(self.buffer) > 32:
-            # samples = choice(wholebuffer, 32)
-            samples, idcs = self.buffer.sample(32)
+            samples = choice(wholebuffer, 32)
+            # samples, idcs = self.buffer.sample(32)
             self.updateNetwork(samples)
