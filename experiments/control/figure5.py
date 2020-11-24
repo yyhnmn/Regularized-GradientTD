@@ -17,8 +17,8 @@ import pandas
 print(torch.cuda.is_available())
 print(torch.cuda.get_device_name(torch.cuda.current_device()))
 
-RUNS = 20
-EPISODES =1000
+RUNS = 1
+EPISODES = 10
 LEARNERS = [DQN, ]
 action_dict = []
 
@@ -115,33 +115,33 @@ print(df.mean())
 
 
 ''' plot '''
-# plt.figure()
-# ax = plt.gca()
-# for Learner in LEARNERS:
-#     name = Learner.__name__
-#     datab = collectorb.getStats(name)
-#     plot(ax, datab, label="back", color="red")
+plt.figure()
+ax = plt.gca()
+for Learner in LEARNERS:
+    name = Learner.__name__
+    datab = collectorb.getStats(name)
+    plot(ax, datab, label="back", color="red")
 
-#     datas = collectors.getStats(name)
-#     plot(ax, datas, label="do nothing", color='blue')
+    datas = collectors.getStats(name)
+    plot(ax, datas, label="do nothing", color='blue')
 
-#     dataf = collectorf.getStats(name)
-#     plot(ax, dataf, label="forward", color='green')
-# plt.xlabel("episode")
-# plt.ylabel("# of actions x (1/1000)")
-# plt.legend()
-# plt.show()
+    dataf = collectorf.getStats(name)
+    plot(ax, dataf, label="forward", color='green')
+plt.xlabel("episode")
+plt.ylabel("# of actions x (1/100)")
+plt.legend()
+plt.show()
 
-# plt.figure()
-# ax = plt.gca()
-# for Learner in LEARNERS:
-#     name = Learner.__name__
-#     data = collectorreward.getStats(name)
-#     plot(ax, data, label=name, color=COLORS[name])
-# plt.xlabel("episode")
-# plt.ylabel("reward")
-# plt.legend()
-# plt.show()
+plt.figure()
+ax = plt.gca()
+for Learner in LEARNERS:
+    name = Learner.__name__
+    data = collectorreward.getStats(name)
+    plot(ax, data, label=name, color=COLORS[name])
+plt.xlabel("episode")
+plt.ylabel("reward")
+plt.legend()
+plt.show()
 
 plt.figure()
 ax = plt.gca()

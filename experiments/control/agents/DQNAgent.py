@@ -35,7 +35,7 @@ class DQN(BaseAgent):
         # by default Q(s', a') = 0 unless the next states are non-terminal
 
         Qspap = torch.zeros(batch.size, device=device)
-        for i in range(32):
+        for i in range(30):
             if batch.actions.numpy()[i][0] == 0:
                 self.back_values.append(Qsa.detach().numpy()[i])
             elif batch.actions.numpy()[i][0] == 1:
@@ -92,7 +92,11 @@ class DQN(BaseAgent):
 
         # as long as we have enough samples in the buffer to do one mini-batch update
         # go ahead and randomly sample a mini-batch and do a single update
-        if len(self.buffer) > 32:
-            samples = choice(wholebuffer, 32)
+        if len(self.buffer_BACK) > 32 and len(self.buffer_STAY) > 32 and len(self.buffer_FORWARD) > 32:
+            # samples = choice(wholebuffer, 32)
+            samplesBack,idcs = self.buffer_BACK.sample(10)
+            samplesStay,idcs = self.buffer_STAY.sample(10)
+            samplesForward,idcs = self.buffer_FORWARD.sample(10)
+            samples = samplesBack+samplesStay+samplesForward
             # samples, idcs = self.buffer.sample(32)
             self.updateNetwork(samples)
