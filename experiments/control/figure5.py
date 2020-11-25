@@ -18,7 +18,7 @@ print(torch.cuda.is_available())
 print(torch.cuda.get_device_name(torch.cuda.current_device()))
 
 RUNS = 1
-EPISODES = 10
+EPISODES = 100
 LEARNERS = [DQN, ]
 action_dict = []
 
@@ -115,6 +115,7 @@ print(df.mean())
 
 
 ''' plot '''
+# Plot # actions
 plt.figure()
 ax = plt.gca()
 for Learner in LEARNERS:
@@ -132,6 +133,7 @@ plt.ylabel("# of actions x (1/100)")
 plt.legend()
 plt.show()
 
+# Plot the reward
 plt.figure()
 ax = plt.gca()
 for Learner in LEARNERS:
@@ -143,6 +145,7 @@ plt.ylabel("reward")
 plt.legend()
 plt.show()
 
+# Plot Q-values
 plt.figure()
 ax = plt.gca()
 for Learner in LEARNERS:
