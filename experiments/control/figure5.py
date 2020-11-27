@@ -15,12 +15,12 @@ from utils.RatioMap import RatioMap
 if torch.cuda.is_available():
     print(torch.cuda.get_device_name(torch.cuda.current_device()))
 
-RUNS = 3
+RUNS = 2
 EPISODES = 100
 RATIO_STEP = 10
 MIN_RATIO = 10
 MAX_RATIO = 30
-SAMPLE_SIZE = 32
+SAMPLE_SIZE = 64
 
 LEARNERS = [DQN, ]
 action_dict = []
@@ -78,7 +78,7 @@ def run_for_ratio(ratio_map, identifier):
             for episode in range(EPISODES):
                 glue.num_steps = 0
                 glue.total_reward = 0
-                glue.runEpisode(max_steps=5000)
+                glue.runEpisode(max_steps=1000)
 
                 print(Learner.__name__ + identifier, run, episode, glue.num_steps)
 

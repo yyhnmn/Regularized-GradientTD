@@ -39,7 +39,8 @@ class DQN(BaseAgent):
         # by default Q(s', a') = 0 unless the next states are non-terminal
 
         Qspap = torch.zeros(batch.size, device=device)
-        for i in range(30):
+
+        for i in range(len(batch.actions.numpy())):
             if batch.actions.numpy()[i][0] == 0:
                 self.back_values.append(Qsa.detach().numpy()[i])
             elif batch.actions.numpy()[i][0] == 1:
