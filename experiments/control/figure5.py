@@ -15,11 +15,11 @@ from utils.RatioMap import RatioMap
 if torch.cuda.is_available():
     print(torch.cuda.get_device_name(torch.cuda.current_device()))
 
-RUNS = 3
-EPISODES = 100
+RUNS = 10
+EPISODES = 500
 RATIO_STEP = 10
 MIN_RATIO = 10
-MAX_RATIO = 30
+MAX_RATIO = 80
 SAMPLE_SIZE = 32
 
 LEARNERS = [DQN, ]

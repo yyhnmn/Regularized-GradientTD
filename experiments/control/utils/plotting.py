@@ -4,7 +4,7 @@ def confidenceInterval(mean, stderr):
     return (mean - stderr, mean + stderr)
 
 def get_random_colour():
-    return (np.random.rand(3, ) * 0.25) + 0.25
+    return (np.random.rand(3, ) * 0.20) + 0.40
 
 def plot(ax, data, label=None, color = None):
     if color is None:
