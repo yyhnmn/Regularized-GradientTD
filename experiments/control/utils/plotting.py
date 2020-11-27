@@ -1,7 +1,14 @@
+import numpy as np
+
 def confidenceInterval(mean, stderr):
     return (mean - stderr, mean + stderr)
 
-def plot(ax, data, label=None, color=None):
+def get_random_colour():
+    return (np.random.rand(3, ) * 0.25) + 0.25
+
+def plot(ax, data, label=None, color = None):
+    if color is None:
+        color = get_random_colour()
     mean, ste, runs = data
     base, = ax.plot(mean, label=label, color=color, linewidth=2)
     (low_ci, high_ci) = confidenceInterval(mean, ste)

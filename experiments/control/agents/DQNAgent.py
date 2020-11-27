@@ -1,6 +1,8 @@
 import torch
 import numpy as np
 import torch.nn.functional as f
+import math
+
 from agents.BaseAgent import BaseAgent
 from utils.torch import device, getBatchColumns
 from utils.ReplayBuffer import ReplayBuffer
@@ -22,6 +24,8 @@ class DQN(BaseAgent):
         self.back_values = []
         self.stay_values = []
         self.forward_values = []
+        self.ratioMap = params['ratioMap']
+        self.sampleSize = params['sampleSize']
 
     def updateNetwork(self, samples):
         # organize the mini-batch so that we can request "columns" from the data
@@ -42,7 +46,6 @@ class DQN(BaseAgent):
                 self.stay_values.append(Qsa.detach().numpy()[i])
             elif batch.actions.numpy()[i][0] == 2:
                 self.forward_values.append(Qsa.detach().numpy()[i])
-
 
         # if we don't have any non-terminal next states, then no need to bootstrap
         if batch.nterm_sp.shape[0] > 0:
@@ -68,8 +71,6 @@ class DQN(BaseAgent):
         # update the *policy network* using the combined gradients
         self.optimizer.step()
 
-
-
     def update(self, s, a, sp, r, gamma):
         if a.cpu().numpy() == 0:
             self.buffer_BACK.add((s, a, sp, r, gamma))
@@ -77,9 +78,6 @@ class DQN(BaseAgent):
             self.buffer_STAY.add((s, a, sp, r, gamma))
         elif a.cpu().numpy() == 2:
             self.buffer_FORWARD.add((s, a, sp, r, gamma))
-
-        wholebuffer = self.buffer_BACK.buffer + \
-            self.buffer_STAY.buffer+self.buffer_FORWARD.buffer
 
         # the "online" sample gets tossed into the replay buffer
         self.buffer.add((s, a, sp, r, gamma))
@@ -90,13 +88,17 @@ class DQN(BaseAgent):
         if self.steps % self.target_refresh == 0:
             self.policy_net.cloneWeightsTo(self.target_net)
 
+        back_sample_count = math.floor(self.ratioMap.backward_ratio * self.sampleSize)
+        stay_sample_count = math.floor(self.ratioMap.stay_ratio * self.sampleSize)
+        forward_sample_count = math.floor(self.ratioMap.forward_ratio * self.sampleSize)
+
         # as long as we have enough samples in the buffer to do one mini-batch update
         # go ahead and randomly sample a mini-batch and do a single update
-        if len(self.buffer_BACK) > 32 and len(self.buffer_STAY) > 32 and len(self.buffer_FORWARD) > 32:
-            # samples = choice(wholebuffer, 32)
-            samplesBack,idcs = self.buffer_BACK.sample(10)
-            samplesStay,idcs = self.buffer_STAY.sample(10)
-            samplesForward,idcs = self.buffer_FORWARD.sample(10)
-            samples = samplesBack+samplesStay+samplesForward
-            # samples, idcs = self.buffer.sample(32)
+        if len(self.buffer_BACK) > back_sample_count \
+                and len(self.buffer_STAY) > stay_sample_count \
+                and len(self.buffer_FORWARD) > forward_sample_count:
+            samplesBack, idcs = self.buffer_BACK.sample(back_sample_count)
+            samplesStay, idcs = self.buffer_STAY.sample(stay_sample_count)
+            samplesForward, idcs = self.buffer_FORWARD.sample(forward_sample_count)
+            samples = samplesBack + samplesStay + samplesForward
             self.updateNetwork(samples)
