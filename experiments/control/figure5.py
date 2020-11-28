@@ -15,8 +15,8 @@ from utils.RatioMap import RatioMap
 if torch.cuda.is_available():
     print(torch.cuda.get_device_name(torch.cuda.current_device()))
 
-RUNS = 2
-EPISODES = 100
+RUNS = 1
+EPISODES = 2
 RATIO_STEP = 10
 MIN_RATIO = 10
 MAX_RATIO = 30
@@ -90,12 +90,25 @@ def run_for_ratio(ratio_map, identifier):
                     Learner.__name__ + identifier, agent.action_dict['forward'] / 100)
                 collectorreward.collect(
                     Learner.__name__ + identifier, glue.total_reward)
+
+                ExBackQ = 0
+                ExStayQ = 0
+                ExForwardQ = 0
+                if len(agent.agent.back_values) != 0 :
+                    ExBackQ = sum(agent.agent.back_values) / len(agent.agent.back_values)
+
+                if len(agent.agent.stay_values) != 0 :
+                    ExStayQ =  sum(agent.agent.stay_values) / len(agent.agent.stay_values)
+
+                if len(agent.agent.forward_values) != 0 :
+                    ExForwardQ = sum(agent.agent.forward_values) / len(agent.agent.forward_values)
+
                 collectorbq.collect(
-                    Learner.__name__ + identifier, sum(agent.agent.back_values) / len(agent.agent.back_values))
+                    Learner.__name__ + identifier, ExBackQ)
                 collectorsq.collect(
-                    Learner.__name__ + identifier, sum(agent.agent.stay_values) / len(agent.agent.stay_values))
+                    Learner.__name__ + identifier, ExStayQ)
                 collectorfq.collect(
-                    Learner.__name__ + identifier, sum(agent.agent.forward_values) / len(agent.agent.forward_values))
+                    Learner.__name__ + identifier, ExForwardQ)
 
             action_dict.append(agent.action_dict)
             collectorb.reset()
@@ -120,35 +133,66 @@ for i in range(len(ratioList)):
     run_for_ratio(ratioList[i], identifierList[i])
 
 ''' plot '''
+# Plot the reward
+plt.figure()
+ax = plt.gca()
+for Learner in LEARNERS:
+    index=0
+    for identifier in identifierList:
+        name = Learner.__name__ + identifier
+        data = collectorreward.getStats(name)
+        plot(ax, data, index,label=name)
+        index+=1
+
+plt.xlabel("episode")
+plt.ylabel("reward")
+plt.legend()
+plt.show()
+
 # Plot # actions
 plt.figure()
 ax = plt.gca()
 for Learner in LEARNERS:
+    index=0
+
     for identifier in identifierList:
         name = Learner.__name__ + identifier
-        # datab = collectorb.getStats(name)
-        datas = collectors.getStats(name)
-        # dataf = collectorf.getStats(name)
-        # plot(ax, datab, label="back", color="red")
-        plot(ax, datas, label=name + "do nothing")
-        # plot(ax, dataf, label="forward", color='green')
+        data = collectors.getStats(name)
+        plot(ax, data, index,label=name + "do nothing")
+        index+=1
+
 
 plt.xlabel("episode")
 plt.ylabel("# of actions x (1/100)")
 plt.legend()
 plt.show()
 
-# Plot the reward
 plt.figure()
 ax = plt.gca()
 for Learner in LEARNERS:
+    index=0
     for identifier in identifierList:
         name = Learner.__name__ + identifier
-        data = collectorreward.getStats(name)
-        plot(ax, data, label=name)
+        data = collectorb.getStats(name)
+        plot(ax, data,index, label=name + "back")
+        index+=1
 
 plt.xlabel("episode")
-plt.ylabel("reward")
+plt.ylabel("# of actions x (1/100)")
+plt.legend()
+plt.show()
+
+plt.figure()
+ax = plt.gca()
+for Learner in LEARNERS:
+    index=0
+    for identifier in identifierList:
+        name = Learner.__name__ + identifier
+        data = collectorf.getStats(name)
+        plot(ax, data,index, label=name + "forward")
+        index+=1
+plt.xlabel("episode")
+plt.ylabel("# of actions x (1/100)")
 plt.legend()
 plt.show()
 
@@ -156,15 +200,41 @@ plt.show()
 plt.figure()
 ax = plt.gca()
 for Learner in LEARNERS:
+    i=0
     for identifier in identifierList:
         name = Learner.__name__ + identifier
-        # datab = collectorbq.getStats(name)
-        datas = collectorsq.getStats(name)
-        # dataf = collectorfq.getStats(name)
-        # plot(ax, datab, label="back", color="red")
-        plot(ax, datas, label=name + " - doNothing")
-        # plot(ax, dataf, label="forward", color='green')
+        data = collectorsq.getStats(name)
+        plot(ax, data,i, label=name + " - doNothing")
+        i+=1
 
+plt.xlabel("epoch")
+plt.ylabel("Q-values")
+plt.legend()
+plt.show()
+
+plt.figure()
+ax = plt.gca()
+for Learner in LEARNERS:
+    i=0
+    for identifier in identifierList:
+        name = Learner.__name__ + identifier
+        data = collectorbq.getStats(name)
+        plot(ax, data,i, label=name + " - back")
+        i+=1
+plt.xlabel("epoch")
+plt.ylabel("Q-values")
+plt.legend()
+plt.show()
+
+plt.figure()
+ax = plt.gca()
+for Learner in LEARNERS:
+    i=0
+    for identifier in identifierList:
+        name = Learner.__name__ + identifier
+        data = collectorfq.getStats(name)
+        plot(ax, data,i, label=name + " - forward")
+        i+=1
 plt.xlabel("epoch")
 plt.ylabel("Q-values")
 plt.legend()

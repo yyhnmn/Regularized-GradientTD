@@ -34,19 +34,28 @@ class DQN(BaseAgent):
 
         # compute Q(s, a) for each sample in mini-batch
         Qs, x = self.policy_net(batch.states)
+
         Qsa = Qs.gather(1, batch.actions).squeeze()
 
+        Qsab = Qs.detach().numpy()[:,0]
+        Qsas = Qs.detach().numpy()[:,1]
+        Qsaf = Qs.detach().numpy()[:,2]
+
         # by default Q(s', a') = 0 unless the next states are non-terminal
-
         Qspap = torch.zeros(batch.size, device=device)
-
+        
         for i in range(len(batch.actions.numpy())):
-            if batch.actions.numpy()[i][0] == 0:
-                self.back_values.append(Qsa.detach().numpy()[i])
-            elif batch.actions.numpy()[i][0] == 1:
-                self.stay_values.append(Qsa.detach().numpy()[i])
-            elif batch.actions.numpy()[i][0] == 2:
-                self.forward_values.append(Qsa.detach().numpy()[i])
+            self.back_values.append(Qsab[i])
+            self.stay_values.append(Qsas[i])
+            self.forward_values.append(Qsaf[i])
+
+        # for i in range(len(batch.actions.numpy())):
+        #     if batch.actions.numpy()[i][0] == 0:
+        #         self.back_values.append(Qsa.detach().numpy()[i])
+        #     elif batch.actions.numpy()[i][0] == 1:
+        #         self.stay_values.append(Qsa.detach().numpy()[i])
+        #     elif batch.actions.numpy()[i][0] == 2:
+        #         self.forward_values.append(Qsa.detach().numpy()[i])
 
         # if we don't have any non-terminal next states, then no need to bootstrap
         if batch.nterm_sp.shape[0] > 0:
@@ -101,5 +110,6 @@ class DQN(BaseAgent):
             samplesBack, idcs = self.buffer_BACK.sample(back_sample_count)
             samplesStay, idcs = self.buffer_STAY.sample(stay_sample_count)
             samplesForward, idcs = self.buffer_FORWARD.sample(forward_sample_count)
+
             samples = samplesBack + samplesStay + samplesForward
             self.updateNetwork(samples)
