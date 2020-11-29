@@ -8,6 +8,8 @@ from utils.torch import device, getBatchColumns
 from utils.ReplayBuffer import ReplayBuffer
 from agents.Network import Network
 from utils.torch import device
+import torch.optim as optim
+
 
 
 def choice(arr, size=1):
@@ -36,6 +38,10 @@ class DQN(BaseAgent):
         self.forward_target_q_net = Network(
             features, self.h1, self.h2, 1).to(device)
         self.forward_q_net.cloneWeightsTo(self.forward_target_q_net)
+        self.optimizerBack = optim.Adam(self.back_q_net.parameters(), lr=self.alpha, betas=(0.9, 0.999))
+        self.optimizerStay = optim.Adam(self.stay_q_net.parameters(), lr=self.alpha, betas=(0.9, 0.999))
+        self.optimizerForward = optim.Adam(self.forward_q_net.parameters(), lr=self.alpha, betas=(0.9, 0.999))
+
 
         self.back_values = []
         self.stay_values = []
@@ -97,7 +103,7 @@ class DQN(BaseAgent):
         # update the *policy network* using the combined gradients
         self.optimizer.step()
 
-    def updateActionNet(self, samples, q_net, targetq_net,storeList):
+    def updateActionNet(self, samples, q_net, target_q_net,optimizer,storeList):
         batch = getBatchColumns(samples)
         Qs, x = q_net(batch.states)
 
@@ -106,7 +112,7 @@ class DQN(BaseAgent):
             storeList.append(Qsa.detach().numpy()[i])
         Qspap = torch.zeros(batch.size, device=device)
         if batch.nterm_sp.shape[0] > 0:
-            Qsp, _ = targetq_net(batch.nterm_sp)
+            Qsp, _ = target_q_net(batch.nterm_sp)
 
             # bootstrapping term is the max Q value for the next-state
             # only assign to indices where the next state is non-terminal
@@ -120,7 +126,7 @@ class DQN(BaseAgent):
 
         # make sure we have no gradients left over from previous update
         self.optimizer.zero_grad()
-        self.target_net.zero_grad()
+        self.target_q_net.zero_grad()
 
         # compute the entire gradient of the network using only the td error
         td_loss.backward()
@@ -165,9 +171,9 @@ class DQN(BaseAgent):
             samplesStay, idcs = self.buffer_STAY.sample(stay_sample_count)
             samplesForward, idcs = self.buffer_FORWARD.sample(
                 forward_sample_count)
-            self.updateActionNet(samplesBack,self.back_q_net,self.back_target_q_net,self.back_values)  
-            self.updateActionNet(samplesStay,self.stay_q_net,self.stay_target_q_net,self.stay_values)
-            self.updateActionNet(samplesForward,self.forward_q_net,self.forward_target_q_net,self.forward_values)
+            self.updateActionNet(samplesBack,self.back_q_net,self.back_target_q_net,self.optimizerBack,self.back_values)  
+            self.updateActionNet(samplesStay,self.stay_q_net,self.stay_target_q_net,self.optimizerStay,self.stay_values)
+            self.updateActionNet(samplesForward,self.forward_q_net,self.forward_target_q_net,self.optimizerForward,self.forward_values)
             samples = samplesBack + samplesStay + samplesForward
             
             self.updateNetwork(samples)
