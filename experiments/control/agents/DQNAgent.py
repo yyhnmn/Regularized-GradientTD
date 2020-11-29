@@ -144,6 +144,10 @@ class DQN(BaseAgent):
         # do that before the learning step
         if self.steps % self.target_refresh == 0:
             self.policy_net.cloneWeightsTo(self.target_net)
+            self.back_q_net.cloneWeightsTo(self.back_target_q_net)
+            self.stay_q_net.cloneWeightsTo(self.stay_target_q_net)
+            self.forward_q_net.cloneWeightsTo(self.forward_target_q_net)
+
 
         back_sample_count = math.floor(
             self.ratioMap.backward_ratio * self.sampleSize)
