@@ -21,6 +21,22 @@ class DQN(BaseAgent):
         self.buffer_BACK = ReplayBuffer(1000)
         self.buffer_STAY = ReplayBuffer(1000)
         self.buffer_FORWARD = ReplayBuffer(1000)
+
+        self.back_q_net = Network(features, self.h1, self.h2, 1).to(device)
+        self.back_target_q_net = Network(
+            features, self.h1, self.h2, 1).to(device)
+        self.back_q_net.cloneWeightsTo(self.back_target_q_net)
+
+        self.stay_q_net = Network(features, self.h1, self.h2, 1).to(device)
+        self.stay_target_q_net = Network(
+            features, self.h1, self.h2, 1).to(device)
+        self.stay_q_net.cloneWeightsTo(self.stay_target_q_net)
+
+        self.forward_q_net = Network(features, self.h1, self.h2, 1).to(device)
+        self.forward_target_q_net = Network(
+            features, self.h1, self.h2, 1).to(device)
+        self.forward_q_net.cloneWeightsTo(self.forward_target_q_net)
+
         self.back_values = []
         self.stay_values = []
         self.forward_values = []
@@ -37,17 +53,17 @@ class DQN(BaseAgent):
 
         Qsa = Qs.gather(1, batch.actions).squeeze()
 
-        Qsab = Qs.detach().numpy()[:,0]
-        Qsas = Qs.detach().numpy()[:,1]
-        Qsaf = Qs.detach().numpy()[:,2]
+        Qsab = Qs.detach().numpy()[:, 0]
+        Qsas = Qs.detach().numpy()[:, 1]
+        Qsaf = Qs.detach().numpy()[:, 2]
 
         # by default Q(s', a') = 0 unless the next states are non-terminal
         Qspap = torch.zeros(batch.size, device=device)
-        
-        for i in range(len(batch.actions.numpy())):
-            self.back_values.append(Qsab[i])
-            self.stay_values.append(Qsas[i])
-            self.forward_values.append(Qsaf[i])
+
+        # for i in range(len(batch.actions.numpy())):
+        #     self.back_values.append(Qsab[i])
+        #     self.stay_values.append(Qsas[i])
+        #     self.forward_values.append(Qsaf[i])
 
         # for i in range(len(batch.actions.numpy())):
         #     if batch.actions.numpy()[i][0] == 0:
@@ -60,6 +76,37 @@ class DQN(BaseAgent):
         # if we don't have any non-terminal next states, then no need to bootstrap
         if batch.nterm_sp.shape[0] > 0:
             Qsp, _ = self.target_net(batch.nterm_sp)
+
+            # bootstrapping term is the max Q value for the next-state
+            # only assign to indices where the next state is non-terminal
+            Qspap[batch.nterm] = Qsp.max(1).values
+
+        # compute the empirical MSBE for this mini-batch and let torch auto-diff to optimize
+        # don't worry about detaching the bootstrapping term for semi-gradient Q-learning
+        # the target network handles that
+        target = batch.rewards + batch.gamma * Qspap.detach()
+        td_loss = 0.5 * f.mse_loss(target, Qsa)
+
+        # make sure we have no gradients left over from previous update
+        self.optimizer.zero_grad()
+        self.target_net.zero_grad()
+
+        # compute the entire gradient of the network using only the td error
+        td_loss.backward()
+
+        # update the *policy network* using the combined gradients
+        self.optimizer.step()
+
+    def updateActionNet(self, samples, q_net, targetq_net,storeList):
+        batch = getBatchColumns(samples)
+        Qs, x = q_net(batch.states)
+
+        Qsa = Qs.squeeze()
+        for i in range(len(batch.actions)):
+            storeList.append(Qsa.detach().numpy()[i])
+        Qspap = torch.zeros(batch.size, device=device)
+        if batch.nterm_sp.shape[0] > 0:
+            Qsp, _ = targetq_net(batch.nterm_sp)
 
             # bootstrapping term is the max Q value for the next-state
             # only assign to indices where the next state is non-terminal
@@ -98,9 +145,12 @@ class DQN(BaseAgent):
         if self.steps % self.target_refresh == 0:
             self.policy_net.cloneWeightsTo(self.target_net)
 
-        back_sample_count = math.floor(self.ratioMap.backward_ratio * self.sampleSize)
-        stay_sample_count = math.floor(self.ratioMap.stay_ratio * self.sampleSize)
-        forward_sample_count = math.floor(self.ratioMap.forward_ratio * self.sampleSize)
+        back_sample_count = math.floor(
+            self.ratioMap.backward_ratio * self.sampleSize)
+        stay_sample_count = math.floor(
+            self.ratioMap.stay_ratio * self.sampleSize)
+        forward_sample_count = math.floor(
+            self.ratioMap.forward_ratio * self.sampleSize)
 
         # as long as we have enough samples in the buffer to do one mini-batch update
         # go ahead and randomly sample a mini-batch and do a single update
@@ -109,7 +159,11 @@ class DQN(BaseAgent):
                 and len(self.buffer_FORWARD) > forward_sample_count:
             samplesBack, idcs = self.buffer_BACK.sample(back_sample_count)
             samplesStay, idcs = self.buffer_STAY.sample(stay_sample_count)
-            samplesForward, idcs = self.buffer_FORWARD.sample(forward_sample_count)
-
+            samplesForward, idcs = self.buffer_FORWARD.sample(
+                forward_sample_count)
+            self.updateActionNet(samplesBack,self.back_q_net,self.back_target_q_net,self.back_values)  
+            self.updateActionNet(samplesStay,self.stay_q_net,self.stay_target_q_net,self.stay_values)
+            self.updateActionNet(samplesForward,self.forward_q_net,self.forward_target_q_net,self.forward_values)
             samples = samplesBack + samplesStay + samplesForward
+            
             self.updateNetwork(samples)

@@ -15,8 +15,8 @@ from utils.RatioMap import RatioMap
 if torch.cuda.is_available():
     print(torch.cuda.get_device_name(torch.cuda.current_device()))
 
-RUNS = 1
-EPISODES = 2
+RUNS = 3
+EPISODES = 100
 RATIO_STEP = 10
 MIN_RATIO = 10
 MAX_RATIO = 30
@@ -207,7 +207,7 @@ for Learner in LEARNERS:
         plot(ax, data,i, label=name + " - doNothing")
         i+=1
 
-plt.xlabel("epoch")
+plt.xlabel("episode")
 plt.ylabel("Q-values")
 plt.legend()
 plt.show()
@@ -221,7 +221,7 @@ for Learner in LEARNERS:
         data = collectorbq.getStats(name)
         plot(ax, data,i, label=name + " - back")
         i+=1
-plt.xlabel("epoch")
+plt.xlabel("episode")
 plt.ylabel("Q-values")
 plt.legend()
 plt.show()
@@ -235,7 +235,7 @@ for Learner in LEARNERS:
         data = collectorfq.getStats(name)
         plot(ax, data,i, label=name + " - forward")
         i+=1
-plt.xlabel("epoch")
+plt.xlabel("episode")
 plt.ylabel("Q-values")
 plt.legend()
 plt.show()

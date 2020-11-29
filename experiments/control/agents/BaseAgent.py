@@ -26,7 +26,7 @@ class BaseAgent:
         # the other as a fixed target network
         self.policy_net = Network(features, self.h1, self.h2, actions).to(device)
         self.target_net = Network(features, self.h1, self.h2, actions).to(device)
-        self.det_net = Network(features, self.h1, self.h2, actions).to(device)
+
 
         # build the optimizer for _only_ the policy network
         # target network parameters will be copied from the policy net periodically
@@ -47,7 +47,6 @@ class BaseAgent:
 
         # otherwise take a greedy action
         q_s, _ = self.policy_net(x)
-        # print(q_s)
         return q_s.argmax().detach()
 
     def updateNetwork(self, samples):
