@@ -125,14 +125,14 @@ class DQN(BaseAgent):
         td_loss = 0.5 * f.mse_loss(target, Qsa)
 
         # make sure we have no gradients left over from previous update
-        self.optimizer.zero_grad()
-        self.target_q_net.zero_grad()
+        optimizer.zero_grad()
+        target_q_net.zero_grad()
 
         # compute the entire gradient of the network using only the td error
         td_loss.backward()
 
         # update the *policy network* using the combined gradients
-        self.optimizer.step()
+        optimizer.step()
 
     def update(self, s, a, sp, r, gamma):
         if a.cpu().numpy() == 0:
