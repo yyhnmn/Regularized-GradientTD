@@ -10,7 +10,8 @@ from environments.MountainCar import MountainCar
 
 from utils.Collector import Collector
 from utils.rl_glue import RlGlueCompatWrapper
-from utils.RatioMap import RatioMap
+from utils.ratiomap import RatioMap
+from utils.serializermodule import SerializerModule
 
 if torch.cuda.is_available():
     print(torch.cuda.get_device_name(torch.cuda.current_device()))
@@ -56,12 +57,15 @@ collectorbq_baseline = Collector()
 collectorsq_baseline = Collector()
 collectorfq_baseline = Collector()
 collectorloss = Collector()
+collector_penultimate_features = Collector()
 
 
 def run_for_ratio(ratio_map, identifier):
     for run in range(RUNS):
         for Learner in LEARNERS:
             np.random.seed(run)
+            serializer = SerializerModule('../temp/', str(run) + "-" + identifier)
+
             torch.manual_seed(run)
 
             env = MountainCar()
@@ -109,6 +113,7 @@ def run_for_ratio(ratio_map, identifier):
                 #     Learner.__name__ + identifier, sum(agent.agent.forward_values) / len(agent.agent.forward_values))
                 
             collectorloss.collect_list(Learner.__name__, agent.agent.td_loss)
+            collector_penultimate_features.collect_list(Learner.__name__, agent.agent.penultimate_features)
             collectorbq.collect_list(Learner.__name__, agent.agent.back_values)
             collectorsq.collect_list(Learner.__name__, agent.agent.stay_values)
             collectorfq.collect_list(Learner.__name__, agent.agent.forward_values)
@@ -116,7 +121,6 @@ def run_for_ratio(ratio_map, identifier):
             collectorbq_baseline.collect_list(Learner.__name__, agent.agent.back_values)
             collectorsq_baseline.collect_list(Learner.__name__, agent.agent.stay_values)
             collectorfq_baseline.collect_list(Learner.__name__, agent.agent.forward_values)
-
 
             action_dict.append(agent.action_dict)
             collectorb.reset()
@@ -130,6 +134,21 @@ def run_for_ratio(ratio_map, identifier):
             collectorsq_baseline.reset()
             collectorfq_baseline.reset()
             collectorloss.reset()
+            collector_penultimate_features.reset()
+
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_B, collectorb)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_S, collectors)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_F, collectorf)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_REWARD, collectorreward)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_BQ, collectorbq)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_SQ, collectorsq)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_FQ, collectorfq)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_BQ_BASELINE, collectorbq_baseline)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_SQ_BASELINE, collectorsq_baseline)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_FQ_BASELINE, collectorfq_baseline)
+            serializer.add_to_serializer(SerializerModule.COLLECTOR_LOSS, collectorloss)
+            serializer.add_to_serializer(SerializerModule.PENULTIMATE_FEATURES, collector_penultimate_features)
+
             agent.resetDict()
 
 
