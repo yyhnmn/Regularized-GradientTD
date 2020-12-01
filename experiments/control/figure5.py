@@ -40,6 +40,11 @@ STEPSIZES = {
     'DQN': 0.0009765,
 }
 
+P = np.random.uniform(low=-1.2, high=0.5, size=1000)
+V = np.random.uniform(low=-0.07, high=0.07, size=1000)
+S_ARR = s = np.transpose(np.vstack((P, V)))
+S_ARR = torch.from_numpy(S_ARR).to(torch.float32)
+
 collectorb = Collector()
 collectors = Collector()
 collectorf = Collector()
@@ -47,6 +52,10 @@ collectorreward = Collector()
 collectorbq = Collector()
 collectorsq = Collector()
 collectorfq = Collector()
+collectorbq_baseline = Collector()
+collectorsq_baseline = Collector()
+collectorfq_baseline = Collector()
+collectorloss = Collector()
 
 
 def run_for_ratio(ratio_map, identifier):
@@ -57,7 +66,7 @@ def run_for_ratio(ratio_map, identifier):
 
             env = MountainCar()
 
-            learner = Learner(env.features, env.num_actions, {
+            learner = Learner(env.features, env.num_actions, S_ARR, {
                 'alpha': STEPSIZES[Learner.__name__],
                 'epsilon': 0.1,
                 'beta': 1.0,
@@ -81,6 +90,9 @@ def run_for_ratio(ratio_map, identifier):
                 glue.runEpisode(max_steps=5000)
 
                 print(Learner.__name__ + identifier, run, episode, glue.num_steps)
+                
+                collectorreward.collect(
+                    Learner.__name__ + identifier, glue.total_reward)
 
                 collectorb.collect(
                     Learner.__name__ + identifier, agent.action_dict['back'] / 100)
@@ -88,14 +100,23 @@ def run_for_ratio(ratio_map, identifier):
                     Learner.__name__ + identifier, agent.action_dict['stay'] / 100)
                 collectorf.collect(
                     Learner.__name__ + identifier, agent.action_dict['forward'] / 100)
-                collectorreward.collect(
-                    Learner.__name__ + identifier, glue.total_reward)
-                collectorbq.collect(
-                    Learner.__name__ + identifier, sum(agent.agent.back_values) / len(agent.agent.back_values))
-                collectorsq.collect(
-                    Learner.__name__ + identifier, sum(agent.agent.stay_values) / len(agent.agent.stay_values))
-                collectorfq.collect(
-                    Learner.__name__ + identifier, sum(agent.agent.forward_values) / len(agent.agent.forward_values))
+                
+                # collectorbq.collect(
+                #     Learner.__name__ + identifier, sum(agent.agent.back_values) / len(agent.agent.back_values))
+                # collectorsq.collect(
+                #     Learner.__name__ + identifier, sum(agent.agent.stay_values) / len(agent.agent.stay_values))
+                # collectorfq.collect(
+                #     Learner.__name__ + identifier, sum(agent.agent.forward_values) / len(agent.agent.forward_values))
+                
+            collectorloss.collect_list(Learner.__name__, agent.agent.td_loss)
+            collectorbq.collect_list(Learner.__name__, agent.agent.back_values)
+            collectorsq.collect_list(Learner.__name__, agent.agent.stay_values)
+            collectorfq.collect_list(Learner.__name__, agent.agent.forward_values)
+            
+            collectorbq_baseline.collect_list(Learner.__name__, agent.agent.back_values)
+            collectorsq_baseline.collect_list(Learner.__name__, agent.agent.stay_values)
+            collectorfq_baseline.collect_list(Learner.__name__, agent.agent.forward_values)
+
 
             action_dict.append(agent.action_dict)
             collectorb.reset()
@@ -105,6 +126,10 @@ def run_for_ratio(ratio_map, identifier):
             collectorbq.reset()
             collectorsq.reset()
             collectorfq.reset()
+            collectorbq_baseline.reset()
+            collectorsq_baseline.reset()
+            collectorfq_baseline.reset()
+            collectorloss.reset()
             agent.resetDict()
 
 
@@ -169,5 +194,25 @@ plt.xlabel("epoch")
 plt.ylabel("Q-values")
 plt.legend()
 plt.show()
+
+
+## PLOT FUNCTIONALITY REMAINS
+
+"""
+## DHRUV, YOU SHOULD SAVE :
+            collectorb
+            collectors
+            collectorf
+            collectorreward
+            collectorbq
+            collectorsq
+            collectorfq
+            collectorbq_baseline
+            collectorsq_baseline
+            collectorfq_baseline
+            collectorloss
+            also net params (last layer)
+
+"""
 
 print("Elapsed time: " + str(time.time() - start_time))
